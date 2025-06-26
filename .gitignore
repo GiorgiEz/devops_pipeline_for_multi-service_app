@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite3
+*.log
+
+# FastAPI/SQLModel
+.env
+.env.*
+
+# VSCode or JetBrains IDEs
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Docker
+*.pid
+*.tar
+*.sock
+
+# Node (if used later)
+node_modules/
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Frontend build cache (if using build tools later)
+dist/
+build/
+
+# Python virtual environments
+venv/
+.env/
+.envrc
+
+# Backup files
+*~
+*.bak
