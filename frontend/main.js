@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000/books";
+const API_URL = "http://localhost:8000/books";
 
 const bookForm = document.getElementById("bookForm");
 const titleInput = document.getElementById("title");
@@ -8,21 +8,25 @@ const genreInput = document.getElementById("genre");
 const bookList = document.getElementById("bookList");
 
 async function fetchBooks() {
-  const response = await fetch(API_URL);
-  const books = await response.json();
+  try {
+    const response = await fetch(API_URL);
+    const books = await response.json();
 
-  bookList.innerHTML = "";
-  books.forEach(book => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span>
-        <strong>${book.title}</strong> by ${book.author} 
-        (${book.year}${book.genre ? ", " + book.genre : ""})
-      </span>
-      <button class="delete-btn" onclick="deleteBook(${book.id})">Delete</button>
-    `;
-    bookList.appendChild(li);
-  });
+    bookList.innerHTML = "";
+    books.forEach(book => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span>
+          <strong>${book.title}</strong> by ${book.author} 
+          (${book.year}${book.genre ? ", " + book.genre : ""})
+        </span>
+        <button class="delete-btn" onclick="deleteBook(${book.id})">Delete</button>
+      `;
+      bookList.appendChild(li);
+    });
+  } catch (error) {
+    console.error("Failed to fetch books:", error);
+  }
 }
 
 bookForm.addEventListener("submit", async (e) => {

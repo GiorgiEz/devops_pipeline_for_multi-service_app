@@ -8,6 +8,7 @@ __pycache__/
 # FastAPI/SQLModel
 .env
 .env.*
+virtual-env
 
 # VSCode or JetBrains IDEs
 .vscode/
