@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: bookstore-backend
+    ports:
+      - "8000:8000"
+    working_dir: /app/src
+    volumes:
+      - ./backend:/app
+    command: fastapi dev main.py --host 0.0.0.0 --port 8000
+
+  frontend:
+    build: ./frontend
+    container_name: bookstore-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

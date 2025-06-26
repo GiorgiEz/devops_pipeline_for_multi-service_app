@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
-from backend.src.models import Book
 from typing import Annotated
-from backend.src.database import SessionDep
+from ..models import Book
+from ..database import SessionDep
 from sqlmodel import select
 
 
