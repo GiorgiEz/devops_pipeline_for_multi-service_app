@@ -12,6 +12,7 @@
 5. [Docker Compose Integration](#docker-compose-integration)
 6. [Running the Application](#running-the-application)
 7. [Accessing Services](#accessing-services)
+8. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
 
 ---
 
@@ -151,3 +152,138 @@ docker compose up --build
 ---
 
 At this stage, both services are containerized and interact seamlessly via Docker Compose.
+
+--- 
+
+## Setting Up Prometheus and Grafana
+
+### 1. Docker Compose Configuration
+
+Add the following services in `docker-compose.yml`:
+
+```yaml
+prometheus:
+  image: prom/prometheus
+  volumes:
+    - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  ports:
+    - "9090:9090"
+
+grafana:
+  image: grafana/grafana
+  ports:
+    - "3000:3000"
+  volumes:
+    - ./monitoring/grafana:/var/lib/grafana
+  environment:
+    - GF_SECURITY_ADMIN_USER=admin
+    - GF_SECURITY_ADMIN_PASSWORD=admin
+```
+
+---
+
+### 2. Monitoring Directory Setup
+
+#### Create `monitoring/prometheus.yml`:
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "fastapi"
+    static_configs:
+      - targets: ["backend:8000"]
+```
+
+#### Create `monitoring/grafana/provisioning/dashboards/dashboard.yml`:
+
+```yaml
+apiVersion: 1
+providers:
+  - name: "default"
+    folder: ""
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
+```
+
+#### Create `monitoring/grafana/provisioning/datasources/prometheus.yml`:
+
+```yaml
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+```
+
+---
+
+### 3. Backend Instrumentation
+
+In `backend/src/main.py`, add Prometheus instrumentation:
+
+```python
+from prometheus_fastapi_instrumentator import Instrumentator
+
+# Instrument Prometheus metrics
+Instrumentator().instrument(app).expose(app)
+```
+
+---
+
+### 4. Run the Application
+
+Use the following command:
+
+```bash
+docker compose up --build
+```
+
+Access services at:
+
+* Prometheus: [http://localhost:9090](http://localhost:9090)
+* Grafana: [http://localhost:3000](http://localhost:3000)
+
+---
+
+### 5. Prometheus Setup
+
+* Go to **Status > Targets**
+* Confirm `backend:8000` target is healthy and reachable
+
+![Prometheus and Backend Connection](images/prometheus-backend-connection.png)
+
+---
+
+### 6. Grafana Setup
+
+* Login at [http://localhost:3000](http://localhost:3000) (user: admin / password: admin)
+* Go to **Data Sources** via the menu
+* If Prometheus isn't listed, click **Add data source**
+* Enter the URL as `http://prometheus:9090`
+* Save and test
+
+![Grafana and Prometheus Connection](images/grafana-prometheus-connection.png)
+
+---
+
+### 7. Create Dashboards
+
+* From the Grafana menu, go to **Dashboards > New > New Dashboard**
+* Click **Add Visualization**
+* Choose **Prometheus** as the data source
+* Under **Metric**, add:
+
+  * `process_cpu_seconds_total`
+  * `process_resident_memory_bytes`
+
+![Dashboards](images/dashboards.png)
+
+Example dashboards after backend was shut down and restarted:
+
+![process-cpu-seconds-total-dashboard](images/process-cpu-seconds-total-dashboard.png)
+![process-resident-memory-bytes-dashboard.png](images/process-resident-memory-bytes-dashboard.png)

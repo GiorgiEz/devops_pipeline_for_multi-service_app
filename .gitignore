@@ -42,3 +42,10 @@ venv/
 # Backup files
 *~
 *.bak
+
+# Ignore Grafana state
+monitoring/grafana/data/
+monitoring/grafana/logs/
+monitoring/grafana/plugins/
+monitoring/grafana/*-cache/
+

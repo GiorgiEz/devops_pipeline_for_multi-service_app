@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from .database import create_db_and_tables
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+from .database import create_db_and_tables
 from .routes import books
 
 app = FastAPI()
@@ -32,3 +33,6 @@ def home():
     }
 
 app.include_router(books.router)
+
+# Instrument Prometheus metrics
+Instrumentator().instrument(app).expose(app)
