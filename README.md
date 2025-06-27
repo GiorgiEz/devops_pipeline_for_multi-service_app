@@ -287,3 +287,68 @@ Example dashboards after backend was shut down and restarted:
 
 ![process-cpu-seconds-total-dashboard](images/process-cpu-seconds-total-dashboard.png)
 ![process-resident-memory-bytes-dashboard.png](images/process-resident-memory-bytes-dashboard.png)
+
+---
+
+## Security Scanning with Trivy
+
+Trivy is used to scan Docker images for vulnerabilities. Below are the scan results for each image in the project, focusing on **CRITICAL** severity.
+
+---
+
+### Backend Image: `devops_pipeline_for_multi-service_app-backend`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  devops_pipeline_for_multi-service_app-backend
+```
+
+![Critical Errors in Backend Image](images/vulnerabilities/backend-image-critical.png)
+
+* **Findings:** 1 critical vulnerability
+* **Status:** Marked as `will_not_fix`, typically indicating it's either irrelevant in context or acknowledged by maintainers and intentionally left unresolved.
+
+---
+
+### 🔹 Frontend Image: `devops_pipeline_for_multi-service_app-frontend`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  devops_pipeline_for_multi-service_app-frontend
+```
+
+![Critical Errors in Frontend Image](images/vulnerabilities/frontend-image-critical.png)
+
+* **Findings:** No critical vulnerabilities detected.
+
+---
+
+### 🔹 Prometheus Image: `prom/prometheus`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  prom/prometheus
+```
+
+![Critical Errors in Prometheus Image](images/vulnerabilities/prometheus-image-critical.png)
+
+* **Findings:** No critical vulnerabilities detected.
+
+---
+
+### 🔹 Grafana Image: `grafana/grafana`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  grafana/grafana
+```
+
+![Critical Errors in Grafana Image](images/vulnerabilities/grafana-image-critical.png)
+
+* **Findings:** No critical vulnerabilities detected.
+
+---
