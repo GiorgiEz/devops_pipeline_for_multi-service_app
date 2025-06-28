@@ -10,9 +10,8 @@
    * [Dockerfile for Backend](#dockerfile-for-backend)
    * [Dockerfile for Frontend](#dockerfile-for-frontend)
 5. [Docker Compose Integration](#docker-compose-integration)
-6. [Running the Application](#running-the-application)
-7. [Accessing Services](#accessing-services)
-8. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
+6. [Accessing Services](#accessing-services)
+7. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
 
 ---
 
@@ -132,24 +131,6 @@ services:
 
 ---
 
-## Running the Application
-
-To build and run both services:
-
-```bash
-# From project root
-docker compose up --build
-```
-
----
-
-## Accessing Services
-
-* **Backend (FastAPI):** [http://localhost:8000](http://localhost:8000)
-* **FastAPI Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Frontend (Bookstore UI):** [http://localhost:8080](http://localhost:8080)
-
----
 
 At this stage, both services are containerized and interact seamlessly via Docker Compose.
 
@@ -244,9 +225,11 @@ docker compose up --build
 ```
 
 Access services at:
-
-* Prometheus: [http://localhost:9090](http://localhost:9090)
-* Grafana: [http://localhost:3000](http://localhost:3000)
+* **Backend (FastAPI):** [http://localhost:8000](http://localhost:8000)
+* **FastAPI Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Frontend (Bookstore UI):** [http://localhost:8080](http://localhost:8080)
+* **Prometheus**: [http://localhost:9090](http://localhost:9090)
+* **Grafana**: [http://localhost:3000](http://localhost:3000)
 
 ---
 
