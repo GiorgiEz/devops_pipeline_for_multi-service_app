@@ -11,7 +11,8 @@
    * [Dockerfile for Frontend](#dockerfile-for-frontend)
 5. [Docker Compose Integration](#docker-compose-integration)
 6. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
-7. [Post-Mortem Analysis: Backend Service Failure](#post-mortem-analysis-backend-service-failure)
+7. [Security Scanning with Trivy](#security-scanning-with-trivy)
+8. [Post-Mortem Analysis: Backend Service Failure](#post-mortem-analysis-backend-service-failure)
 
 ---
 
