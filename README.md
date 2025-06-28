@@ -10,8 +10,9 @@
    * [Dockerfile for Backend](#dockerfile-for-backend)
    * [Dockerfile for Frontend](#dockerfile-for-frontend)
 5. [Docker Compose Integration](#docker-compose-integration)
-6. [Running the Application](#running-the-application)
-7. [Accessing Services](#accessing-services)
+6. [Accessing Services](#accessing-services)
+7. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
+8. [Post-Mortem Analysis: Backend Service Failure](#post-mortem-analysis-backend-service-failure)
 
 ---
 
@@ -131,23 +132,272 @@ services:
 
 ---
 
-## Running the Application
 
-To build and run both services:
+At this stage, both services are containerized and interact seamlessly via Docker Compose.
 
-```bash
-# From project root
-docker compose up --build
+--- 
+
+## Setting Up Prometheus and Grafana
+
+### 1. Docker Compose Configuration
+
+Add the following services in `docker-compose.yml`:
+
+```yaml
+prometheus:
+  image: prom/prometheus
+  volumes:
+    - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  ports:
+    - "9090:9090"
+
+grafana:
+  image: grafana/grafana
+  ports:
+    - "3000:3000"
+  volumes:
+    - ./monitoring/grafana:/var/lib/grafana
+  environment:
+    - GF_SECURITY_ADMIN_USER=admin
+    - GF_SECURITY_ADMIN_PASSWORD=admin
 ```
 
 ---
 
-## Accessing Services
+### 2. Monitoring Directory Setup
 
-* **Backend (FastAPI):** [http://localhost:8000](http://localhost:8000)
-* **FastAPI Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Frontend (Bookstore UI):** [http://localhost:8080](http://localhost:8080)
+#### Create `monitoring/prometheus.yml`:
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "fastapi"
+    static_configs:
+      - targets: ["backend:8000"]
+```
+
+#### Create `monitoring/grafana/provisioning/dashboards/dashboard.yml`:
+
+```yaml
+apiVersion: 1
+providers:
+  - name: "default"
+    folder: ""
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
+```
+
+#### Create `monitoring/grafana/provisioning/datasources/prometheus.yml`:
+
+```yaml
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+```
 
 ---
 
-At this stage, both services are containerized and interact seamlessly via Docker Compose.
+### 3. Backend Instrumentation
+
+In `backend/src/main.py`, add Prometheus instrumentation:
+
+```python
+from prometheus_fastapi_instrumentator import Instrumentator
+
+# Instrument Prometheus metrics
+Instrumentator().instrument(app).expose(app)
+```
+
+---
+
+### 4. Run the Application
+
+Use the following command:
+
+```bash
+docker compose up --build
+```
+
+Access services at:
+* **Backend (FastAPI):** [http://localhost:8000](http://localhost:8000)
+* **FastAPI Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Frontend (Bookstore UI):** [http://localhost:8080](http://localhost:8080)
+* **Prometheus**: [http://localhost:9090](http://localhost:9090)
+* **Grafana**: [http://localhost:3000](http://localhost:3000)
+
+---
+
+### 5. Prometheus Setup
+
+* Go to **Status > Targets**
+* Confirm `backend:8000` target is healthy and reachable
+
+![Prometheus and Backend Connection](images/prometheus-backend-connection.png)
+
+---
+
+### 6. Grafana Setup
+
+* Login at [http://localhost:3000](http://localhost:3000) (user: admin / password: admin)
+* Go to **Data Sources** via the menu
+* If Prometheus isn't listed, click **Add data source**
+* Enter the URL as `http://prometheus:9090`
+* Save and test
+
+![Grafana and Prometheus Connection](images/grafana-prometheus-connection.png)
+
+---
+
+### 7. Create Dashboards
+
+* From the Grafana menu, go to **Dashboards > New > New Dashboard**
+* Click **Add Visualization**
+* Choose **Prometheus** as the data source
+* Under **Metric**, add:
+
+  * `process_cpu_seconds_total`
+  * `process_resident_memory_bytes`
+
+![Dashboards](images/dashboards.png)
+
+Example dashboards after backend was shut down and restarted:
+
+![process-cpu-seconds-total-dashboard](images/process-cpu-seconds-total-dashboard.png)
+![process-resident-memory-bytes-dashboard.png](images/process-resident-memory-bytes-dashboard.png)
+
+---
+
+## Security Scanning with Trivy
+
+Trivy is used to scan Docker images for vulnerabilities. Below are the scan results for each image in the project, focusing on **CRITICAL** severity.
+
+---
+
+### Backend Image: `devops_pipeline_for_multi-service_app-backend`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  devops_pipeline_for_multi-service_app-backend
+```
+
+![Critical Errors in Backend Image](images/vulnerabilities/backend-image-critical.png)
+
+* **Findings:** 1 critical vulnerability
+* **Status:** Marked as `will_not_fix`, typically indicating it's either irrelevant in context or acknowledged by maintainers and intentionally left unresolved.
+
+---
+
+### 🔹 Frontend Image: `devops_pipeline_for_multi-service_app-frontend`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  devops_pipeline_for_multi-service_app-frontend
+```
+
+![Critical Errors in Frontend Image](images/vulnerabilities/frontend-image-critical.png)
+
+* **Findings:** No critical vulnerabilities detected.
+
+---
+
+### 🔹 Prometheus Image: `prom/prometheus`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  prom/prometheus
+```
+
+![Critical Errors in Prometheus Image](images/vulnerabilities/prometheus-image-critical.png)
+
+* **Findings:** No critical vulnerabilities detected.
+
+---
+
+### 🔹 Grafana Image: `grafana/grafana`
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity CRITICAL --format table \
+  grafana/grafana
+```
+
+![Critical Errors in Grafana Image](images/vulnerabilities/grafana-image-critical.png)
+
+* **Findings:** No critical vulnerabilities detected.
+
+---
+
+## Post-Mortem Analysis: Backend Service Failure
+
+### Overview
+
+This section describes the expected system behavior and monitoring insights when the **backend container is intentionally shut down**. It includes observed outcomes in the frontend, Prometheus, and Grafana, as well as a brief post-mortem report.
+
+---
+
+### Step-by-Step Breakdown
+
+#### Initial Setup
+
+Ensure the following containers are running via `docker compose up`:
+
+* Backend (FastAPI)
+* Frontend (NGINX + static site)
+* Prometheus
+* Grafana
+
+#### Simulating Failure
+
+1. Use Docker Desktop (or CLI) to stop the **backend container**.
+2. Confirm backend shutdown by visiting:
+
+   * [http://localhost:8000](http://localhost:8000) → Should now be **unreachable**.
+   * [http://localhost:8080](http://localhost:8080) (Frontend) → Should load, but **book fetching, adding, and deleting will fail**.
+
+#### Prometheus Observation
+
+1. Open Prometheus UI: [http://localhost:9090/targets](http://localhost:9090/targets)
+2. Look at **Target Status** → The backend will be shown as `DOWN`.
+
+![Prometheus Backend Connection Down](images/post-mortem/prometheus.png)
+
+#### Grafana Observation
+
+1. Open Grafana UI: [http://localhost:3000](http://localhost:3000)
+2. View a dashboard with backend metrics (e.g., CPU, memory).
+3. As time passes, no new data points will be plotted. Existing metric lines will **flatline**, indicating no incoming data.
+
+![Grafana Dashboard Connection Down](images/post-mortem/dashboard.png)
+
+---
+
+### Post-Mortem Summary
+
+**Incident**: Backend container was intentionally stopped to simulate failure.
+
+**Impact**:
+
+* API at `/books` became unreachable.
+* Frontend unable to display or modify books.
+* Prometheus marked the backend as `DOWN`.
+* Grafana dashboards showed no new metrics.
+
+**Detection**:
+
+* Prometheus `/targets` showed backend unreachable.
+* Grafana stopped receiving data for backend metrics.
+
+**Resolution**:
+
+* Restarted backend container.
+* System returned to normal.
