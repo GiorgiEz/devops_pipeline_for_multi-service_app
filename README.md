@@ -12,6 +12,7 @@
 5. [Docker Compose Integration](#docker-compose-integration)
 6. [Accessing Services](#accessing-services)
 7. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
+8. [Post-Mortem Analysis: Backend Service Failure](#post-mortem-analysis-backend-service-failure)
 
 ---
 
@@ -335,3 +336,68 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 * **Findings:** No critical vulnerabilities detected.
 
 ---
+
+## Post-Mortem Analysis: Backend Service Failure
+
+### Overview
+
+This section describes the expected system behavior and monitoring insights when the **backend container is intentionally shut down**. It includes observed outcomes in the frontend, Prometheus, and Grafana, as well as a brief post-mortem report.
+
+---
+
+### Step-by-Step Breakdown
+
+#### Initial Setup
+
+Ensure the following containers are running via `docker compose up`:
+
+* Backend (FastAPI)
+* Frontend (NGINX + static site)
+* Prometheus
+* Grafana
+
+#### Simulating Failure
+
+1. Use Docker Desktop (or CLI) to stop the **backend container**.
+2. Confirm backend shutdown by visiting:
+
+   * [http://localhost:8000](http://localhost:8000) → Should now be **unreachable**.
+   * [http://localhost:8080](http://localhost:8080) (Frontend) → Should load, but **book fetching, adding, and deleting will fail**.
+
+#### Prometheus Observation
+
+1. Open Prometheus UI: [http://localhost:9090/targets](http://localhost:9090/targets)
+2. Look at **Target Status** → The backend will be shown as `DOWN`.
+
+![Prometheus Backend Connection Down](images/post-mortem/prometheus.png)
+
+#### Grafana Observation
+
+1. Open Grafana UI: [http://localhost:3000](http://localhost:3000)
+2. View a dashboard with backend metrics (e.g., CPU, memory).
+3. As time passes, no new data points will be plotted. Existing metric lines will **flatline**, indicating no incoming data.
+
+![Grafana Dashboard Connection Down](images/post-mortem/dashboard.png)
+
+---
+
+### Post-Mortem Summary
+
+**Incident**: Backend container was intentionally stopped to simulate failure.
+
+**Impact**:
+
+* API at `/books` became unreachable.
+* Frontend unable to display or modify books.
+* Prometheus marked the backend as `DOWN`.
+* Grafana dashboards showed no new metrics.
+
+**Detection**:
+
+* Prometheus `/targets` showed backend unreachable.
+* Grafana stopped receiving data for backend metrics.
+
+**Resolution**:
+
+* Restarted backend container.
+* System returned to normal.
