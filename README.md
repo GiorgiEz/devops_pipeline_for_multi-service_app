@@ -10,9 +10,8 @@
    * [Dockerfile for Backend](#dockerfile-for-backend)
    * [Dockerfile for Frontend](#dockerfile-for-frontend)
 5. [Docker Compose Integration](#docker-compose-integration)
-6. [Accessing Services](#accessing-services)
-7. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
-8. [Post-Mortem Analysis: Backend Service Failure](#post-mortem-analysis-backend-service-failure)
+6. [Setting Up Prometheus and Grafana](#setting-up-prometheus-and-grafana)
+7. [Post-Mortem Analysis: Backend Service Failure](#post-mortem-analysis-backend-service-failure)
 
 ---
 
